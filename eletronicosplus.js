@@ -1,77 +1,103 @@
-const express = require("express");
+//instalando programas
 const mongoose = require("mongoose");
+const express = require("express");
 const bodyParser = require("body-parser");
 
-// Configuração básica
+
+//configurando o roteamento para teste no postman
 const app = express();
-app.use(bodyParser.json()); // para ler o corpo da requisição no formato JSON
+app.use(bodyParser.urlencoded({extended:true}));
+app.use(bodyParser.json());
+const port = 3000;
 
-// Conexão do banco de dados
-mongoose.connect("mongodb://127.0.0.1:27017/eletronicosplus", {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
+
+//configurando o acesso ao mongodb
+mongoose.connect('mongodb://127.0.0.1:27017/produtoeletronico',
+{   useNewUrlParser: true,
+    useUnifiedTopology: true,
+    serverSelectionTimeoutMS : 20000
 });
 
-// Criação de modelos
+
+//criando a model do seu projeto
 const usuarioSchema = new mongoose.Schema({
-  Usuario: { type: String },
-  password: { type: String, required: true }
+    email : {type : String, required : true},
+    senha : { type : String}
 });
 
-const Usuario = mongoose.model('Usuario', usuarioSchema);
 
-const produtoEletronicoSchema = new mongoose.Schema({
-  Nome: { type: String },
-  Preco: { type: Number, required: true }
+const Usuario = mongoose.model("usuario", usuarioSchema);
+
+
+//configurando os roteamentos
+app.post("/cadastrousuario", async(req, res)=>{
+    const email = req.body.email;
+    const senha = req.body.senha
+
+    const usuario = new Usuario({
+        email : email,
+        senha : senha
+    })
+
+
+    try{
+        const newusuario = await usuario.save();
+        res.json({error : null, msg : "Cadastro ok", UsuarioId : newusuario._id});
+    } catch(error){
+        res.status(400).json({error});
+    }
+
+
 });
 
-const ProdutoEletronico = mongoose.model('ProdutoEletronico', produtoEletronicoSchema);
-
-// Rota de cadastro de Usuário
-app.post("/cadastroeletronicosplus", async (req, res) => {
-  const { Usuario, password } = req.body;
-
-  if (Usuario == null || password == null) {
-    return res.status(400).json({ error: "Digite os campos!!!" });
-  }
-
-  const novoUsuario = new Usuario({
-    Usuario: Usuario,
-    password: password
-  });
-
-  try {
-    const novoUsuarioSalvo = await novoUsuario.save();
-    res.json({ error: null, msg: "Cadastro de usuário ok!!!", userId: novoUsuarioSalvo.id });
-  } catch (error) {
-    res.status(400).json({ error });
-  }
+//criando a model do seu projeto
+const produtoeletronicoSchema = new mongoose.Schema({
+    id_produtoeletronico: {type : String, required : true},
+    descricao: {type : String},
+    marca: { type : String},
+    data: {type : Date},
+    garantia: {type : Number}
 });
 
-// Rota de cadastro de Produto Eletrônico
-app.post("/cadastroprodutoeletronico", async (req, res) => {
-  const { Nome, Preco } = req.body;
 
-  if (Nome == null || Preco == null) {
-    return res.status(400).json({ error: "Digite os campos!!!" });
-  }
+const Produtoeletronico = mongoose.model("produtoeletronico", produtoeletronicoSchema);
 
-  const novoProdutoEletronico = new ProdutoEletronico({
-    Nome: Nome,
-    Preco: Preco
-  });
 
-  try {
-    const novoProdutoEletronicoSalvo = await novoProdutoEletronico.save();
-    res.json({ error: null, msg: "Produto eletrônico cadastrado com sucesso!", produtoId: novoProdutoEletronicoSalvo.id });
-  } catch (error) {
-    res.status(400).json({ error });
-  }
+//configurando os roteamentos
+app.post("/cadastroprodutoeletronico", async(req, res)=>{
+    const id_produtoeletronico =  req.body.id_produtoeletronico;
+    const descricao = req.body.descricao;
+    const marca = req.body.marca;
+    const data = req.body.data;
+    const garantia = req.body.garantia
+
+
+    const produtoeletronico = new Produtoeletronico({
+        id_produtoeletronico : id_produtoeletronico,
+        descricao: descricao,
+        marca: marca,
+        data: data,
+        garantia: garantia
+    })
+
+
+    try{
+        const newprodutoeletronico = await produtoeletronico.save();
+        res.json({error : null, msg : "Cadastro ok", produtoeletronicoId : newprodutoeletronico._id});
+    } catch(error){
+        res.status(400).json({error});
+    }
+
+
 });
 
-// Rota de leitura da porta
-app.listen(3000, () => {
-  console.log("Rodando na porta 3000");
-});
 
-  
+app.get("/", async(req, res)=>{
+    res.sendFile(__dirname +"/index.html");
+})
+
+
+//configurando a porta
+app.listen(port, ()=>{
+    console.log(`Servidor rodando na porta ${port}`);
+})
